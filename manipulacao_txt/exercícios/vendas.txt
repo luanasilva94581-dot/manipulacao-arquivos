@@ -1,0 +1,9 @@
+Ana;Notebook;3500.00
+Bruno;Mouse;80.00
+Carlos;Teclado;150.00
+Ana;Monitor;900.00
+Daniela;Notebook;3500.00
+Bruno;Headset;200.00
+Carlos;Mouse;80.00
+Ana;Teclado;150.00
+Daniela;Monitor;900.00

@@ -1,0 +1,1 @@
+Olá, Mundo!Estou aprendendo PythonEstou estudando manipulação de arquivos.
