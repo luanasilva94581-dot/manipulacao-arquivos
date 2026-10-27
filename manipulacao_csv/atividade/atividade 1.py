@@ -1,26 +1,107 @@
+
 import csv
+from pathlib import Path
+
+treinadores = []
+
+# Localizar o arquivo treinadores.csv
+pasta_atual = Path(__file__).resolve().parent
+arquivo_csv = None
+
+for pasta in [pasta_atual, *pasta_atual.parents]:
+    caminho = pasta / "treinadores.csv"
+
+    if caminho.exists():
+        arquivo_csv = caminho
+        break
+
+# Ler o arquivo CSV
+if arquivo_csv is None:
+    print("Erro: arquivo treinadores.csv não encontrado.")
+    print("Coloque o arquivo na mesma pasta do código ou em uma pasta acima.")
+
+else:
+    with open(arquivo_csv, "r", encoding="utf-8-sig") as arquivo:
+        leitor = csv.DictReader(arquivo)
+
+        for treinador in leitor:
+            treinadores.append(treinador)
 
 
-# Carregar os treinadores do arquivo CSV
-def carregar_treinadores():
-    treinadores = []
+    def listar_treinadores():
+        print("\n--- TODOS OS TREINADORES ---")
 
-    try:
-        with open("treinadores.csv", "r", encoding="utf-8") as arquivo:
-            leitor = csv.DictReader(arquivo)
-
-            for treinador in leitor:
-                treinadores.append(treinador)
-
-    except FileNotFoundError:
-        print("Arquivo treinadores.csv não encontrado.")
-
-    return treinadores
+        for treinador in treinadores:
+            print("Nome:", treinador["nome"])
+            print("Região:", treinador["regiao"])
+            print("Nível:", treinador["nivel"])
+            print()
 
 
-# Menu principal
-def menu():
-    treinadores = carregar_treinadores()
+    def buscar_treinador():
+        nome_busca = input("Digite o nome do treinador: ").strip()
+        encontrado = False
+
+        for treinador in treinadores:
+            if treinador["nome"].strip().lower() == nome_busca.lower():
+                print("\nNome:", treinador["nome"])
+                print("Região:", treinador["regiao"])
+                print("Nível:", treinador["nivel"])
+                encontrado = True
+                break
+
+        if not encontrado:
+            print("Treinador não encontrado.")
+
+
+    def listar_por_regiao():
+        regiao_busca = input("Digite a região: ").strip()
+        encontrado = False
+
+        for treinador in treinadores:
+            if treinador["regiao"].strip().lower() == regiao_busca.lower():
+                print("\nNome:", treinador["nome"])
+                print("Região:", treinador["regiao"])
+                print("Nível:", treinador["nivel"])
+                encontrado = True
+
+        if not encontrado:
+            print("Nenhum treinador encontrado nessa região.")
+
+
+    def mostrar_maior_nivel():
+        if not treinadores:
+            print("Não existem treinadores cadastrados.")
+            return
+
+        maior = treinadores[0]
+
+        for treinador in treinadores:
+            if int(treinador["nivel"]) > int(maior["nivel"]):
+                maior = treinador
+
+        print("\n--- TREINADOR COM MAIOR NÍVEL ---")
+        print("Nome:", maior["nome"])
+        print("Região:", maior["regiao"])
+        print("Nível:", maior["nivel"])
+
+
+    def mostrar_menor_nivel():
+        if not treinadores:
+            print("Não existem treinadores cadastrados.")
+            return
+
+        menor = treinadores[0]
+
+        for treinador in treinadores:
+            if int(treinador["nivel"]) < int(menor["nivel"]):
+                menor = treinador
+
+        print("\n--- TREINADOR COM MENOR NÍVEL ---")
+        print("Nome:", menor["nome"])
+        print("Região:", menor["regiao"])
+        print("Nível:", menor["nivel"])
+
 
     while True:
         print("\n===== TREINADORES POKÉMON =====")
@@ -31,103 +112,26 @@ def menu():
         print("5 - Mostrar treinador com menor nível")
         print("6 - Sair")
 
-        opcao = input("Escolha uma opção: ")
+        opcao = input("Escolha uma opção: ").strip()
 
-        # 1 - Listar todos
         if opcao == "1":
+            listar_treinadores()
 
-            if not treinadores:
-                print("Nenhum treinador encontrado.")
-            else:
-                for treinador in treinadores:
-                    print(
-                        f"Nome: {treinador['nome']}, "
-                        f"Região: {treinador['regiao']}, "
-                        f"Nível: {treinador['nivel']}"
-                    )
-
-        # 2 - Buscar pelo nome
         elif opcao == "2":
+            buscar_treinador()
 
-            nome = input("Digite o nome do treinador: ").strip().lower()
-
-            encontrado = False
-
-            for treinador in treinadores:
-                if treinador["nome"].lower() == nome:
-                    print("\nTreinador encontrado!")
-                    print(f"Nome: {treinador['nome']}")
-                    print(f"Região: {treinador['regiao']}")
-                    print(f"Nível: {treinador['nivel']}")
-
-                    encontrado = True
-                    break
-
-            if not encontrado:
-                print("Treinador não encontrado.")
-
-        # 3 - Listar por região
         elif opcao == "3":
+            listar_por_regiao()
 
-            regiao = input("Digite a região: ").strip().lower()
-
-            encontrados = []
-
-            for treinador in treinadores:
-                if treinador["regiao"].lower() == regiao:
-                    encontrados.append(treinador)
-
-            if encontrados:
-                print(f"\nTreinadores da região {regiao.title()}:")
-
-                for treinador in encontrados:
-                    print(
-                        f"Nome: {treinador['nome']} - "
-                        f"Nível: {treinador['nivel']}"
-                    )
-            else:
-                print("Nenhum treinador encontrado nessa região.")
-
-        # 4 - Maior nível
         elif opcao == "4":
+            mostrar_maior_nivel()
 
-            if treinadores:
-                maior = max(
-                    treinadores,
-                    key=lambda treinador: int(treinador["nivel"])
-                )
-
-                print(
-                    f"\nTreinador com maior nível: "
-                    f"{maior['nome']} - Nível {maior['nivel']}"
-                )
-            else:
-                print("Nenhum treinador encontrado.")
-
-        # 5 - Menor nível
         elif opcao == "5":
+            mostrar_menor_nivel()
 
-            if treinadores:
-                menor = min(
-                    treinadores,
-                    key=lambda treinador: int(treinador["nivel"])
-                )
-
-                print(
-                    f"\nTreinador com menor nível: "
-                    f"{menor['nome']} - Nível {menor['nivel']}"
-                )
-            else:
-                print("Nenhum treinador encontrado.")
-
-        # 6 - Sair
         elif opcao == "6":
-            print("Saindo...")
+            print("Saindo do programa...")
             break
 
         else:
-            print("Opção inválida!")
-
-
-if __name__ == "__main__":
-    menu()
+            print("Opção inválida. Tente novamente.")

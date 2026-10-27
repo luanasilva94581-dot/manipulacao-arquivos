@@ -1,117 +1,105 @@
+
 import csv
+from pathlib import Path
 
 
-# Carregar treinadores
-def carregar_treinadores():
-    treinadores = []
+def localizar_arquivo(nome):
+    pasta = Path(__file__).resolve().parent
 
-    with open("treinadores.csv", "r", encoding="utf-8") as arquivo:
-        leitor = csv.DictReader(arquivo)
+    for local in [pasta, *pasta.parents]:
+        arquivo = local / nome
 
-        for treinador in leitor:
-            treinadores.append(treinador)
+        if arquivo.exists():
+            return arquivo
 
-    return treinadores
-
-
-# Carregar Pokémon
-def carregar_pokemons():
-    pokemons = []
-
-    with open("pokemons.csv", "r", encoding="utf-8") as arquivo:
-        leitor = csv.DictReader(arquivo)
-
-        for pokemon in leitor:
-            pokemons.append(pokemon)
-
-    return pokemons
+    return None
 
 
-# 1 - Listar treinadores
+def carregar_csv(nome):
+    arquivo = localizar_arquivo(nome)
+
+    if arquivo is None:
+        print(f"Erro: arquivo {nome} não encontrado!")
+        return []
+
+    with open(arquivo, "r", encoding="utf-8-sig", newline="") as f:
+        leitor = csv.DictReader(f)
+        return list(leitor)
+
+
 def listar_treinadores(treinadores):
-    print("\n===== TREINADORES =====")
+    print("\n===== TREINADORES CADASTRADOS =====")
 
     for treinador in treinadores:
-        print(
-            f"Nome: {treinador['nome']} - "
-            f"Região: {treinador['regiao']} - "
-            f"Nível: {treinador['nivel']}"
-        )
+        print(f"\nNome: {treinador['nome']}")
+        print(f"Região: {treinador['regiao']}")
+        print(f"Nível: {treinador['nivel']}")
 
 
-# 2 - Consultar equipe
 def consultar_equipe(treinadores, pokemons):
-
     nome = input("Digite o nome do treinador: ").strip().lower()
 
     treinador_encontrado = None
 
-    # Procurar o treinador
     for treinador in treinadores:
-        if treinador["nome"].lower() == nome:
+        if treinador["nome"].strip().lower() == nome:
             treinador_encontrado = treinador
             break
 
     if treinador_encontrado is None:
-        print("Treinador não encontrado.")
+        print("Treinador não encontrado!")
         return
 
-    print("\n===== EQUIPE =====")
+    equipe = []
+
+    for pokemon in pokemons:
+        if pokemon["treinador"].strip().lower() == nome:
+            equipe.append(pokemon)
+
+    print("\n===== EQUIPE DO TREINADOR =====")
     print(f"Treinador: {treinador_encontrado['nome']}")
     print(f"Região: {treinador_encontrado['regiao']}")
     print(f"Nível: {treinador_encontrado['nivel']}")
 
     print("\nPokémon da equipe:")
 
-    numero = 1
+    if len(equipe) == 0:
+        print("Nenhum Pokémon cadastrado para esse treinador.")
+        return
 
-    for pokemon in pokemons:
-
-        if pokemon["treinador"].lower() == nome:
-
-            print(
-                f"{numero} - "
-                f"{pokemon['nome']} - "
-                f"{pokemon['tipo']} - "
-                f"{pokemon['nivel']}"
-            )
-
-            numero += 1
-
-    if numero == 1:
-        print("Nenhum Pokémon encontrado.")
+    for i, pokemon in enumerate(equipe, start=1):
+        print(
+            f"{i} - {pokemon['nome']} - "
+            f"{pokemon['tipo']} - {pokemon['nivel']}"
+        )
 
 
-# 3 - Calcular pontuação
-def calcular_pontuacao(treinadores, pokemons):
-
+def calcular_pontuacoes(treinadores, pokemons):
     resultados = []
 
     for treinador in treinadores:
-
-        nome = treinador["nome"]
-
-        nivel_treinador = int(treinador["nivel"])
-
-        quantidade_pokemons = 0
-        soma_niveis = 0
+        equipe = []
 
         for pokemon in pokemons:
+            if (
+                pokemon["treinador"].strip().lower()
+                == treinador["nome"].strip().lower()
+            ):
+                equipe.append(pokemon)
 
-            if pokemon["treinador"].lower() == nome.lower():
+        soma_niveis = 0
 
-                nivel_pokemon = int(pokemon["nivel"])
+        for pokemon in equipe:
+            soma_niveis += int(pokemon["nivel"])
 
-                quantidade_pokemons += 1
-                soma_niveis += nivel_pokemon
-
+        nivel_treinador = int(treinador["nivel"])
         pontuacao = nivel_treinador + soma_niveis
 
         resultado = {
-            "treinador": nome,
+            "treinador": treinador["nome"],
             "regiao": treinador["regiao"],
             "nivel_treinador": nivel_treinador,
-            "quantidade_pokemon": quantidade_pokemons,
+            "quantidade_pokemons": len(equipe),
             "soma_niveis": soma_niveis,
             "pontuacao": pontuacao
         }
@@ -121,89 +109,76 @@ def calcular_pontuacao(treinadores, pokemons):
     return resultados
 
 
-# 4 - Mostrar classificação
-def mostrar_classificacao(treinadores, pokemons):
-
-    resultados = calcular_pontuacao(
-        treinadores,
-        pokemons
-    )
-
-    # Ordenar do maior para o menor
-    resultados.sort(
-        key=lambda resultado: resultado["pontuacao"],
-        reverse=True
-    )
-
-    print("\n===== CLASSIFICAÇÃO =====")
-
-    posicao = 1
+def mostrar_pontuacoes(resultados):
+    print("\n===== PONTUAÇÃO DOS TREINADORES =====")
 
     for resultado in resultados:
-
-        print(
-            f"{posicao}º - "
-            f"{resultado['treinador']} - "
-            f"{resultado['pontuacao']} pontos"
-        )
-
-        posicao += 1
+        print(f"\nTreinador: {resultado['treinador']}")
+        print(f"Quantidade de Pokémon: {resultado['quantidade_pokemons']}")
+        print(f"Soma dos níveis: {resultado['soma_niveis']}")
+        print(f"Pontuação: {resultado['pontuacao']}")
 
 
-# 5 - Gerar CSV do campeonato
-def gerar_csv_campeonato(treinadores, pokemons):
-
-    resultados = calcular_pontuacao(
-        treinadores,
-        pokemons
-    )
-
-    # Ordenar do maior para o menor
-    resultados.sort(
+def mostrar_classificacao(resultados):
+    classificacao = sorted(
+        resultados,
         key=lambda resultado: resultado["pontuacao"],
         reverse=True
     )
 
-    nome_arquivo = "resultado_campeonato.csv"
+    print("\n===== CLASSIFICAÇÃO DO CAMPEONATO =====")
 
-    with open(
-        nome_arquivo,
-        "w",
-        newline="",
-        encoding="utf-8"
-    ) as arquivo:
-
-        campos = [
-            "treinador",
-            "regiao",
-            "nivel_treinador",
-            "quantidade_pokemon",
-            "soma_niveis",
-            "pontuacao"
-        ]
-
-        escritor = csv.DictWriter(
-            arquivo,
-            fieldnames=campos
+    for posicao, resultado in enumerate(classificacao, start=1):
+        print(
+            f"{posicao}º lugar - {resultado['treinador']} "
+            f"({resultado['regiao']}) - "
+            f"Pontuação: {resultado['pontuacao']}"
         )
 
+
+def gerar_csv(resultados):
+    arquivo = localizar_arquivo("treinadores.csv")
+
+    if arquivo is None:
+        print("Não foi possível localizar a pasta dos arquivos CSV.")
+        return
+
+    caminho_saida = arquivo.parent / "resultado_campeonato.csv"
+
+    campos = [
+        "treinador",
+        "regiao",
+        "nivel_treinador",
+        "quantidade_pokemons",
+        "soma_niveis",
+        "pontuacao"
+    ]
+
+    with open(
+        caminho_saida,
+        "w",
+        encoding="utf-8-sig",
+        newline=""
+    ) as f:
+        escritor = csv.DictWriter(f, fieldnames=campos)
         escritor.writeheader()
+        escritor.writerows(resultados)
 
-        for resultado in resultados:
-            escritor.writerow(resultado)
-
-    print(f"\nArquivo criado: {nome_arquivo}")
-    print(f"Registros gravados: {len(resultados)}")
+    print(f"\nArquivo gerado com sucesso: {caminho_saida.name}")
+    print(f"Quantidade de resultados: {len(resultados)}")
 
 
-# Menu principal
-def menu():
+def main():
+    treinadores = carregar_csv("treinadores.csv")
+    pokemons = carregar_csv("pokemons.csv")
 
-    treinadores = carregar_treinadores()
-    pokemons = carregar_pokemons()
+    if not treinadores or not pokemons:
+        print("Verifique se os arquivos CSV existem e possuem dados.")
+        return
+
+    resultados = []
 
     while True:
-
         print("\n===== CAMPEONATO POKÉMON =====")
         print("1 - Listar treinadores")
         print("2 - Consultar equipe")
@@ -218,62 +193,31 @@ def menu():
             listar_treinadores(treinadores)
 
         elif opcao == "2":
-            consultar_equipe(
-                treinadores,
-                pokemons
-            )
+            consultar_equipe(treinadores, pokemons)
 
         elif opcao == "3":
-
-            resultados = calcular_pontuacao(
-                treinadores,
-                pokemons
-            )
-
-            print("\n===== PONTUAÇÃO =====")
-
-            for resultado in resultados:
-
-                print(
-                    f"Treinador: {resultado['treinador']}"
-                )
-
-                print(
-                    f"Quantidade de Pokémon: "
-                    f"{resultado['quantidade_pokemon']}"
-                )
-
-                print(
-                    f"Soma dos níveis: "
-                    f"{resultado['soma_niveis']}"
-                )
-
-                print(
-                    f"Pontuação: "
-                    f"{resultado['pontuacao']}"
-                )
-
-                print()
+            resultados = calcular_pontuacoes(treinadores, pokemons)
+            mostrar_pontuacoes(resultados)
 
         elif opcao == "4":
-            mostrar_classificacao(
-                treinadores,
-                pokemons
-            )
+            if not resultados:
+                resultados = calcular_pontuacoes(treinadores, pokemons)
+
+            mostrar_classificacao(resultados)
 
         elif opcao == "5":
-            gerar_csv_campeonato(
-                treinadores,
-                pokemons
-            )
+            if not resultados:
+                resultados = calcular_pontuacoes(treinadores, pokemons)
+
+            gerar_csv(resultados)
 
         elif opcao == "6":
-            print("Saindo...")
+            print("Encerrando o Campeonato Pokémon. Até mais!")
             break
 
         else:
-            print("Opção inválida!")
+            print("Opção inválida! Tente novamente.")
 
 
 if __name__ == "__main__":
-    menu()
+    main()

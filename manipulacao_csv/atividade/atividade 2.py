@@ -1,171 +1,194 @@
+
 import csv
+from pathlib import Path
+
+treinadores = []
+pokemons = []
+
+# Localizar os arquivos CSV
+pasta_atual = Path(__file__).resolve().parent
 
 
-# Carregar os treinadores
-def carregar_treinadores():
-    treinadores = []
+def localizar_arquivo(nome):
+    for pasta in [pasta_atual, *pasta_atual.parents]:
+        caminho = pasta / nome
 
-    try:
-        with open("treinadores.csv", "r", encoding="utf-8") as arquivo:
-            leitor = csv.DictReader(arquivo)
+        if caminho.exists():
+            return caminho
 
-            for treinador in leitor:
-                treinadores.append(treinador)
-
-    except FileNotFoundError:
-        print("Arquivo treinadores.csv não encontrado.")
-
-    return treinadores
+    return None
 
 
-# Carregar os Pokémon
-def carregar_pokemons():
-    pokemons = []
-
-    try:
-        with open("pokemons.csv", "r", encoding="utf-8") as arquivo:
-            leitor = csv.DictReader(arquivo)
-
-            for pokemon in leitor:
-                pokemons.append(pokemon)
-
-    except FileNotFoundError:
-        print("Arquivo pokemons.csv não encontrado.")
-
-    return pokemons
+arquivo_treinadores = localizar_arquivo("treinadores.csv")
+arquivo_pokemons = localizar_arquivo("pokemons.csv")
 
 
-# Procurar os Pokémon de um treinador
-def buscar_pokemons_treinador(treinadores, pokemons):
-    nome = input("Digite o nome do treinador: ").strip().lower()
+# Ler os arquivos
+if arquivo_treinadores is None or arquivo_pokemons is None:
+    print("Erro: não foi possível encontrar os arquivos CSV.")
+    print("Verifique se os arquivos estão na pasta do projeto.")
 
-    treinador_encontrado = None
+else:
+    with open(arquivo_treinadores, "r", encoding="utf-8-sig") as arquivo:
+        leitor = csv.DictReader(arquivo)
 
-    # Procurar o treinador
-    for treinador in treinadores:
-        if treinador["nome"].lower() == nome:
-            treinador_encontrado = treinador
-            break
+        for treinador in leitor:
+            treinadores.append(treinador)
 
-    if treinador_encontrado is None:
-        print("Treinador não encontrado.")
-        return []
+    with open(arquivo_pokemons, "r", encoding="utf-8-sig") as arquivo:
+        leitor = csv.DictReader(arquivo)
 
-    # Lista para guardar os Pokémon encontrados
-    pokemons_treinador = []
+        for pokemon in leitor:
+            pokemons.append(pokemon)
 
-    for pokemon in pokemons:
-        if pokemon["treinador"].lower() == nome:
-            pokemons_treinador.append(pokemon)
+    # Opção 1
+    def listar_pokemons():
+        nome_busca = input("Digite o nome do treinador: ").strip()
+        treinador_encontrado = None
 
-    return pokemons_treinador
+        for treinador in treinadores:
+            if treinador["nome"].strip().lower() == nome_busca.lower():
+                treinador_encontrado = treinador
+                break
 
+        if treinador_encontrado is None:
+            print("Treinador não encontrado.")
+            return
 
-# 1 - Listar Pokémon de um treinador
-def listar_pokemons(treinadores, pokemons):
-    pokemons_treinador = buscar_pokemons_treinador(
-        treinadores,
-        pokemons
-    )
+        equipe = []
 
-    if pokemons_treinador:
-        print("\n===== POKÉMON DO TREINADOR =====")
+        for pokemon in pokemons:
+            if pokemon["treinador"].strip().lower() == treinador_encontrado["nome"].strip().lower():
+                equipe.append(pokemon)
 
-        for pokemon in pokemons_treinador:
-            print(
-                f"{pokemon['nome']} - "
-                f"{pokemon['tipo']} - "
-                f"Nível {pokemon['nivel']}"
-            )
-    else:
-        print("Nenhum Pokémon encontrado.")
+        if not equipe:
+            print("Esse treinador não possui Pokémon cadastrados.")
+            return
 
+        print("\nPokémon de", treinador_encontrado["nome"], ":")
 
-# 2 - Contar Pokémon de um treinador
-def contar_pokemons(treinadores, pokemons):
-    pokemons_treinador = buscar_pokemons_treinador(
-        treinadores,
-        pokemons
-    )
+        for pokemon in equipe:
+            print("Nome:", pokemon["nome"])
+            print("Tipo:", pokemon["tipo"])
+            print("Nível:", pokemon["nivel"])
+            print()
 
-    if pokemons_treinador:
-        quantidade = len(pokemons_treinador)
+    # Opção 2
+    def contar_pokemons():
+        nome_busca = input("Digite o nome do treinador: ").strip()
+        treinador_encontrado = None
 
-        print(f"Quantidade de Pokémon: {quantidade}")
-    else:
-        print("Nenhum Pokémon encontrado.")
+        for treinador in treinadores:
+            if treinador["nome"].strip().lower() == nome_busca.lower():
+                treinador_encontrado = treinador
+                break
 
+        if treinador_encontrado is None:
+            print("Treinador não encontrado.")
+            return
 
-# 3 - Mostrar Pokémon de maior nível
-def maior_nivel(treinadores, pokemons):
-    pokemons_treinador = buscar_pokemons_treinador(
-        treinadores,
-        pokemons
-    )
+        quantidade = 0
 
-    if pokemons_treinador:
-        maior = max(
-            pokemons_treinador,
-            key=lambda pokemon: int(pokemon["nivel"])
-        )
+        for pokemon in pokemons:
+            if pokemon["treinador"].strip().lower() == treinador_encontrado["nome"].strip().lower():
+                quantidade += 1
 
-        print(
-            f"Maior nível: {maior['nome']} "
-            f"- Nível {maior['nivel']}"
-        )
-    else:
-        print("Nenhum Pokémon encontrado.")
+        print("Treinador:", treinador_encontrado["nome"])
+        print("Quantidade de Pokémon:", quantidade)
 
+    # Opção 3
+    def mostrar_maior_nivel():
+        nome_busca = input("Digite o nome do treinador: ").strip()
+        treinador_encontrado = None
 
-# 4 - Mostrar Pokémon de menor nível
-def menor_nivel(treinadores, pokemons):
-    pokemons_treinador = buscar_pokemons_treinador(
-        treinadores,
-        pokemons
-    )
+        for treinador in treinadores:
+            if treinador["nome"].strip().lower() == nome_busca.lower():
+                treinador_encontrado = treinador
+                break
 
-    if pokemons_treinador:
-        menor = min(
-            pokemons_treinador,
-            key=lambda pokemon: int(pokemon["nivel"])
-        )
+        if treinador_encontrado is None:
+            print("Treinador não encontrado.")
+            return
 
-        print(
-            f"Menor nível: {menor['nome']} "
-            f"- Nível {menor['nivel']}"
-        )
-    else:
-        print("Nenhum Pokémon encontrado.")
+        equipe = []
 
+        for pokemon in pokemons:
+            if pokemon["treinador"].strip().lower() == treinador_encontrado["nome"].strip().lower():
+                equipe.append(pokemon)
 
-# 5 - Listar Pokémon de determinado tipo
-def listar_por_tipo(pokemons):
-    tipo = input("Digite o tipo do Pokémon: ").strip().lower()
+        if not equipe:
+            print("Esse treinador não possui Pokémon cadastrados.")
+            return
 
-    encontrados = []
+        maior = equipe[0]
 
-    for pokemon in pokemons:
-        if pokemon["tipo"].lower() == tipo:
-            encontrados.append(pokemon)
+        for pokemon in equipe:
+            if int(pokemon["nivel"]) > int(maior["nivel"]):
+                maior = pokemon
 
-    if encontrados:
-        print("\n===== POKÉMON DO TIPO =====")
+        print("\nPokémon de maior nível:")
+        print("Nome:", maior["nome"])
+        print("Tipo:", maior["tipo"])
+        print("Nível:", maior["nivel"])
+
+    # Opção 4
+    def mostrar_menor_nivel():
+        nome_busca = input("Digite o nome do treinador: ").strip()
+        treinador_encontrado = None
+
+        for treinador in treinadores:
+            if treinador["nome"].strip().lower() == nome_busca.lower():
+                treinador_encontrado = treinador
+                break
+
+        if treinador_encontrado is None:
+            print("Treinador não encontrado.")
+            return
+
+        equipe = []
+
+        for pokemon in pokemons:
+            if pokemon["treinador"].strip().lower() == treinador_encontrado["nome"].strip().lower():
+                equipe.append(pokemon)
+
+        if not equipe:
+            print("Esse treinador não possui Pokémon cadastrados.")
+            return
+
+        menor = equipe[0]
+
+        for pokemon in equipe:
+            if int(pokemon["nivel"]) < int(menor["nivel"]):
+                menor = pokemon
+
+        print("\nPokémon de menor nível:")
+        print("Nome:", menor["nome"])
+        print("Tipo:", menor["tipo"])
+        print("Nível:", menor["nivel"])
+
+    # Opção 5
+    def listar_por_tipo():
+        tipo_busca = input("Digite o tipo do Pokémon: ").strip()
+        encontrados = []
+
+        for pokemon in pokemons:
+            if pokemon["tipo"].strip().lower() == tipo_busca.lower():
+                encontrados.append(pokemon)
+
+        if not encontrados:
+            print("Nenhum Pokémon encontrado desse tipo.")
+            return
+
+        print("\nPokémon do tipo", tipo_busca, ":")
 
         for pokemon in encontrados:
-            print(
-                f"{pokemon['nome']} - "
-                f"Treinador: {pokemon['treinador']} - "
-                f"Nível {pokemon['nivel']}"
-            )
-    else:
-        print("Nenhum Pokémon desse tipo encontrado.")
+            print("Nome:", pokemon["nome"])
+            print("Tipo:", pokemon["tipo"])
+            print("Nível:", pokemon["nivel"])
+            print("Treinador:", pokemon["treinador"])
+            print()
 
-
-# Menu
-def menu():
-    treinadores = carregar_treinadores()
-    pokemons = carregar_pokemons()
-
+    # Menu principal
     while True:
         print("\n===== POKÉMON DOS TREINADORES =====")
         print("1 - Listar Pokémon de um treinador")
@@ -175,30 +198,26 @@ def menu():
         print("5 - Listar Pokémon de determinado tipo")
         print("6 - Voltar ao menu")
 
-        opcao = input("Escolha uma opção: ")
+        opcao = input("Escolha uma opção: ").strip()
 
         if opcao == "1":
-            listar_pokemons(treinadores, pokemons)
+            listar_pokemons()
 
         elif opcao == "2":
-            contar_pokemons(treinadores, pokemons)
+            contar_pokemons()
 
         elif opcao == "3":
-            maior_nivel(treinadores, pokemons)
+            mostrar_maior_nivel()
 
         elif opcao == "4":
-            menor_nivel(treinadores, pokemons)
+            mostrar_menor_nivel()
 
         elif opcao == "5":
-            listar_por_tipo(pokemons)
+            listar_por_tipo()
 
         elif opcao == "6":
-            print("Voltando ao menu...")
+            print("Voltando...")
             break
 
         else:
-            print("Opção inválida!")
-
-
-if __name__ == "__main__":
-    menu()
+            print("Opção inválida. Tente novamente.")

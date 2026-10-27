@@ -1,26 +1,207 @@
+
 import csv
+from pathlib import Path
 
-def carregar_dados():
-    treinadores = []
-    pokemons = []
-    try:
-        with open('treinadores.csv', mode='r', encoding='utf-8') as f:
-            treinadores = list(csv.DictReader(f))
-    except FileNotFoundError:
-        print("Aviso: treinadores.csv não encontrado.")
-
-    try:
-        with open('pokemons.csv', mode='r', encoding='utf-8') as f:
-            pokemons = list(csv.DictReader(f))
-    except FileNotFoundError:
-        print("Aviso: pokemons.csv não encontrado.")
-
-    return treinadores, pokemons
+# Localizar os arquivos
+pasta_atual = Path(__file__).resolve().parent
 
 
-def menu():
-    treinadores, pokemons = carregar_dados()
+def localizar_arquivo(nome):
+    for pasta in [pasta_atual, *pasta_atual.parents]:
+        caminho = pasta / nome
 
+        if caminho.exists():
+            return caminho
+
+    return None
+
+
+arquivo_pokemons = localizar_arquivo("pokemons.csv")
+arquivo_treinadores = localizar_arquivo("treinadores.csv")
+
+pokemons = []
+treinadores = []
+
+# Ler os arquivos CSV
+if arquivo_pokemons is None or arquivo_treinadores is None:
+    print("Erro: não foi possível encontrar os arquivos CSV.")
+    print("Verifique se pokemons.csv e treinadores.csv estão no projeto.")
+
+else:
+    with open(arquivo_pokemons, "r", encoding="utf-8-sig") as arquivo:
+        leitor = csv.DictReader(arquivo)
+
+        for pokemon in leitor:
+            pokemons.append({
+                "nome": pokemon["nome"].strip(),
+                "tipo": pokemon["tipo"].strip(),
+                "nivel": pokemon["nivel"].strip(),
+                "treinador": pokemon["treinador"].strip()
+            })
+
+    with open(arquivo_treinadores, "r", encoding="utf-8-sig") as arquivo:
+        leitor = csv.DictReader(arquivo)
+
+        for treinador in leitor:
+            treinadores.append(treinador["nome"].strip())
+
+
+    # Opção 1 - Listar Pokémon
+    def listar_pokemons():
+        if not pokemons:
+            print("Nenhum Pokémon cadastrado.")
+            return
+
+        print("\n--- POKÉMON CADASTRADOS ---")
+
+        for pokemon in pokemons:
+            print("Nome:", pokemon["nome"])
+            print("Tipo:", pokemon["tipo"])
+            print("Nível:", pokemon["nivel"])
+            print("Treinador:", pokemon["treinador"])
+            print()
+
+
+    # Opção 2 - Pesquisar Pokémon
+    def pesquisar_pokemon():
+        nome_busca = input("Digite o nome do Pokémon: ").strip()
+
+        for pokemon in pokemons:
+            if pokemon["nome"].lower() == nome_busca.lower():
+                print("\nNome:", pokemon["nome"])
+                print("Tipo:", pokemon["tipo"])
+                print("Nível:", pokemon["nivel"])
+                print("Treinador:", pokemon["treinador"])
+                return
+
+        print("Pokémon não encontrado.")
+
+
+    # Opção 3 - Adicionar Pokémon
+    def adicionar_pokemon():
+        nome = input("Nome: ").strip()
+
+        if nome == "":
+            print("O nome não pode ficar vazio.")
+            return
+
+        # Verificar se o Pokémon já existe
+        for pokemon in pokemons:
+            if pokemon["nome"].lower() == nome.lower():
+                print("Esse Pokémon já está cadastrado.")
+                return
+
+        tipo = input("Tipo: ").strip()
+
+        if tipo == "":
+            print("O tipo não pode ficar vazio.")
+            return
+
+        nivel = input("Nível: ").strip()
+
+        if not nivel.isdigit():
+            print("O nível deve ser um número inteiro.")
+            return
+
+        nivel_numero = int(nivel)
+
+        if nivel_numero < 1 or nivel_numero > 100:
+            print("O nível deve estar entre 1 e 100.")
+            return
+
+        treinador = input("Treinador: ").strip()
+
+        treinador_encontrado = None
+
+        for nome_treinador in treinadores:
+            if nome_treinador.lower() == treinador.lower():
+                treinador_encontrado = nome_treinador
+                break
+
+        if treinador_encontrado is None:
+            print("Treinador não encontrado.")
+            return
+
+        novo_pokemon = {
+            "nome": nome,
+            "tipo": tipo,
+            "nivel": str(nivel_numero),
+            "treinador": treinador_encontrado
+        }
+
+        pokemons.append(novo_pokemon)
+
+        print("Pokémon adicionado com sucesso!")
+        print("Não esqueça de salvar as alterações na opção 6.")
+
+
+    # Opção 4 - Alterar nível
+    def alterar_nivel():
+        nome_busca = input("Digite o nome do Pokémon: ").strip()
+
+        for pokemon in pokemons:
+            if pokemon["nome"].lower() == nome_busca.lower():
+                novo_nivel = input("Digite o novo nível: ").strip()
+
+                if not novo_nivel.isdigit():
+                    print("O nível deve ser um número inteiro.")
+                    return
+
+                nivel_numero = int(novo_nivel)
+
+                if nivel_numero < 1 or nivel_numero > 100:
+                    print("O nível deve estar entre 1 e 100.")
+                    return
+
+                pokemon["nivel"] = str(nivel_numero)
+
+                print("Nível alterado com sucesso!")
+                print("Não esqueça de salvar as alterações na opção 6.")
+                return
+
+        print("Pokémon não encontrado.")
+
+
+    # Opção 5 - Remover Pokémon
+    def remover_pokemon():
+        nome_busca = input("Digite o nome do Pokémon: ").strip()
+
+        for pokemon in pokemons:
+            if pokemon["nome"].lower() == nome_busca.lower():
+                pokemons.remove(pokemon)
+                print("Pokémon removido com sucesso!")
+                print("Não esqueça de salvar as alterações na opção 6.")
+                return
+
+        print("Pokémon não encontrado.")
+
+
+    # Opção 6 - Salvar alterações
+    def salvar_alteracoes():
+        caminho_saida = pasta_atual / "pokemons_atualizados.csv"
+
+        colunas = ["nome", "tipo", "nivel", "treinador"]
+
+        with open(
+            caminho_saida,
+            "w",
+            newline="",
+            encoding="utf-8-sig"
+        ) as arquivo:
+            escritor = csv.DictWriter(
+                arquivo,
+                fieldnames=colunas
+            )
+
+            escritor.writeheader()
+            escritor.writerows(pokemons)
+
+        print("Alterações salvas com sucesso!")
+        print("Arquivo:", caminho_saida.name)
+        print("Quantidade de Pokémon gravados:", len(pokemons))
+
+
+    # Menu principal
     while True:
         print("\n===== GERENCIADOR DE POKÉMON =====")
         print("1 - Listar Pokémon")
@@ -31,108 +212,29 @@ def menu():
         print("6 - Salvar alterações")
         print("7 - Sair")
 
-        opcao = input("Escolha uma opção: ")
+        opcao = input("Escolha uma opção: ").strip()
 
         if opcao == "1":
-            for p in pokemons:
-                print(
-                    f"Nome: {p.get('nome')}, Tipo: {p.get('tipo')}, Nível: {p.get('nivel')}, Treinador: {p.get('treinador')}")
+            listar_pokemons()
 
         elif opcao == "2":
-            nome = input("Digite o nome do Pokémon: ").strip().lower()
-            p_encontrado = next((p for p in pokemons if p.get('nome', '').lower() == nome), None)
-            if p_encontrado:
-                print(f"Nome: {p_encontrado.get('nome')}")
-                print(f"Tipo: {p_encontrado.get('tipo')}")
-                print(f"Nível: {p_encontrado.get('nivel')}")
-                print(f"Treinador: {p_encontrado.get('treinador')}")
-            else:
-                print("Pokémon não encontrado.")
+            pesquisar_pokemon()
 
         elif opcao == "3":
-            nome = input("Nome: ").strip()
-            tipo = input("Tipo: ").strip()
-            nivel_str = input("Nível (1-100): ").strip()
-            treinador = input("Treinador: ").strip()
-
-            # Validações
-            if not nome or not tipo:
-                print("Erro: Nome e Tipo não podem ser vazios.")
-                continue
-            try:
-                nivel = int(nivel_str)
-                if nivel < 1 or nivel > 100:
-                    print("Erro: O nível deve estar entre 1 e 100.")
-                    continue
-            except ValueError:
-                print("Erro: Nível inválido.")
-                continue
-
-            # Validar se treinador existe
-            treinador_existe = any(t.get('nome', '').lower() == treinador.lower() for t in treinadores)
-            if not treinador_existe:
-                print("Erro: O treinador informado não existe em treinadores.csv.")
-                continue
-
-            # Validar duplicado
-            if any(p.get('nome', '').lower() == nome.lower() for p in pokemons):
-                print("Erro: Este Pokémon já está cadastrado.")
-                continue
-
-            novo_p = {
-                "nome": nome,
-                "tipo": tipo,
-                "nivel": str(nivel),
-                "treinador": treinador
-            }
-            pokemons.append(novo_p)
-            print("Pokémon adicionado à lista local!")
+            adicionar_pokemon()
 
         elif opcao == "4":
-            nome = input("Digite o nome do Pokémon a alterar: ").strip().lower()
-            p_encontrado = next((p for p in pokemons if p.get('nome', '').lower() == nome), None)
-            if p_encontrado:
-                try:
-                    novo_nivel = int(input("Digite o novo nível (1-100): "))
-                    if 1 <= novo_nivel <= 100:
-                        p_encontrado['nivel'] = str(novo_nivel)
-                        print("Nível alterado com sucesso!")
-                    else:
-                        print("Nível inválido.")
-                except ValueError:
-                    print("Valor inválido.")
-            else:
-                print("Pokémon não encontrado.")
+            alterar_nivel()
 
         elif opcao == "5":
-            nome = input("Digite o nome do Pokémon a remover: ").strip().lower()
-            p_encontrado = next((p for p in pokemons if p.get('nome', '').lower() == nome), None)
-            if p_encontrado:
-                pokemons.remove(p_encontrado)
-                print("Pokémon removido da lista local!")
-            else:
-                print("Pokémon não encontrado.")
+            remover_pokemon()
 
         elif opcao == "6":
-            with open('pokemons_atualizados.csv', mode='w', newline='', encoding='utf-8') as f:
-                campos = ['nome', 'tipo', 'nivel', 'treinador']
-                escritor = csv.DictWriter(f, fieldnames=campos)
-                escritor.writeheader()
-                for p in pokemons:
-                    escritor.writerow({
-                        'nome': p.get('nome'),
-                        'tipo': p.get('tipo'),
-                        'nivel': p.get('nivel'),
-                        'treinador': p.get('treinador')
-                    })
-            print("Alterações salvas em 'pokemons_atualizados.csv'!")
+            salvar_alteracoes()
 
         elif opcao == "7":
-            print("A sair...")
+            print("Saindo do programa...")
             break
+
         else:
-            print("Opção inválida!")
-
-
-if __name__ == "__main__":
-    menu()
+            print("Opção inválida. Tente novamente.")
